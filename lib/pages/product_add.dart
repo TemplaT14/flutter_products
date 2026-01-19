@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,16 +13,20 @@ class ProductAdd extends StatefulWidget {
 }
 
 class _ProductAddState extends State<ProductAdd> {
-  // Instanciamos el servicio directamente (como indica el tutorial)
+  // Instanciamos el servicio directamente para asegurar la conexion
   final ProductsService _productsService = ProductsService();
   
+  // Clave global para identificar y validar este formulario especifico
   final _formKey = GlobalKey<FormState>();
+  
+  // Controladores: Capturan el texto que escribe el usuario en cada campo
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   final _availableController = TextEditingController();
   final _imageUrlController = TextEditingController();
   final _ratingController = TextEditingController();
 
+  // Limpieza de memoria cuando cerramos la pantalla (evita fugas)
   @override
   void dispose() {
     _descriptionController.dispose();
@@ -34,12 +37,14 @@ class _ProductAddState extends State<ProductAdd> {
     super.dispose();
   }
 
+  // Abre la galeria del movil para seleccionar una foto
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
     try {
       final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
       if (pickedFile != null) {
         setState(() {
+          // Guardamos la ruta del archivo seleccionado en el campo de texto
           _imageUrlController.text = pickedFile.path;
         });
       }
@@ -53,24 +58,27 @@ class _ProductAddState extends State<ProductAdd> {
     return Scaffold(
       appBar: AppBar(title: const Text('Nuevo Producto')),
       body: Form(
-        key: _formKey,
+        key: _formKey, // Asignamos la clave para validar todo junto luego
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(30),
           child: Column(
             children: [
+              // --- Campo Descripcion ---
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
                   icon: Icon(Icons.description_outlined),
-                  labelText: 'Descripción',
+                  labelText: 'Descripcion',
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Introduzca una descripción';
-                  if (value.length < 5) return 'Mínimo 5 caracteres';
+                  if (value == null || value.isEmpty) return 'Introduzca una descripcion';
+                  if (value.length < 5) return 'Minimo 5 caracteres';
                   return null;
                 },
               ),
               const SizedBox(height: 10),
+              
+              // --- Campo Precio ---
               TextFormField(
                 controller: _priceController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -80,20 +88,23 @@ class _ProductAddState extends State<ProductAdd> {
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Introduzca un precio';
-                  if (double.tryParse(value) == null) return 'Valor numérico requerido';
+                  if (double.tryParse(value) == null) return 'Valor numerico requerido';
                   if (double.parse(value) <= 0) return 'Mayor que 0';
                   return null;
                 },
               ),
               const SizedBox(height: 10),
+              
+              // --- Campo Fecha (Selector) ---
               TextFormField(
                 controller: _availableController,
-                readOnly: true,
+                readOnly: true, // No se puede escribir a mano, solo tocar
                 decoration: const InputDecoration(
                   icon: Icon(Icons.calendar_today),
                   labelText: 'Disponible',
                 ),
                 onTap: () async {
+                  // Muestra el calendario nativo
                   DateTime? pickedDate = await showDatePicker(
                     context: context,
                     initialDate: DateTime.now(),
@@ -102,25 +113,30 @@ class _ProductAddState extends State<ProductAdd> {
                   );
                   if (pickedDate != null) {
                     setState(() {
+                      // Formatea la fecha a texto (yyyy-MM-dd)
                       _availableController.text = DateFormat('yyyy-MM-dd').format(pickedDate);
                     });
                   }
                 },
               ),
               const SizedBox(height: 10),
+              
+              // --- Campo Imagen ---
               TextFormField(
                 controller: _imageUrlController,
                 keyboardType: TextInputType.url,
                 decoration: InputDecoration(
                   icon: const Icon(Icons.image_outlined),
-                  labelText: 'Image URL',
+                  labelText: 'URL de Imagen',
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.folder_open),
-                    onPressed: _pickImage,
+                    onPressed: _pickImage, // Boton para abrir galeria
                   ),
                 ),
               ),
               const SizedBox(height: 10),
+              
+              // --- Campo Rating ---
               TextFormField(
                 controller: _ratingController,
                 keyboardType: TextInputType.number,
@@ -137,11 +153,16 @@ class _ProductAddState extends State<ProductAdd> {
                 },
               ),
               const SizedBox(height: 30),
+              
+              // --- Boton Crear ---
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
+                  // Validamos todos los campos del formulario a la vez
                   if (_formKey.currentState!.validate()) {
+                    
+                    // Creamos el objeto Product con los datos del formulario
                     final newProduct = Product(
-                      id: DateTime.now().millisecondsSinceEpoch,
+                      id: DateTime.now().millisecondsSinceEpoch, // Usamos la hora como ID unico
                       description: _descriptionController.text,
                       price: double.parse(_priceController.text),
                       available: _availableController.text.isNotEmpty
@@ -152,10 +173,15 @@ class _ProductAddState extends State<ProductAdd> {
                           ? int.parse(_ratingController.text)
                           : 0,
                     );
-                    _productsService.addProduct(newProduct);
+
+                    // Guardamos usando el servicio y esperamos (await)
+                    await _productsService.addProduct(newProduct);
+
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Producto añadido')),
+                      const SnackBar(content: Text('Producto anadido')),
                     );
+                    
+                    // Cerramos la pantalla para volver a la lista
                     Navigator.pop(context);
                   }
                 },

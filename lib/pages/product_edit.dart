@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_products/models/products.dart';
@@ -16,7 +15,6 @@ class ProductEdit extends StatefulWidget {
 }
 
 class _ProductEditState extends State<ProductEdit> {
-  // Instancia local del servicio
   final ProductsService _productsService = ProductsService();
   
   final _formKey = GlobalKey<FormState>();
@@ -31,7 +29,7 @@ class _ProductEditState extends State<ProductEdit> {
   @override
   void initState() {
     product = widget.product;
-    // Inicializamos los controladores con los valores del producto
+    // Rellenamos el formulario con los datos actuales del producto
     _descriptionController.text = product.description;
     _priceController.text = product.price.toString();
     _availableController.text = DateFormat('yyyy-MM-dd').format(product.available);
@@ -42,6 +40,7 @@ class _ProductEditState extends State<ProductEdit> {
 
   @override
   void dispose() {
+    // Limpiamos memoria
     _descriptionController.dispose();
     _priceController.dispose();
     _availableController.dispose();
@@ -74,19 +73,22 @@ class _ProductEditState extends State<ProductEdit> {
           padding: const EdgeInsets.all(30),
           child: Column(
             children: [
+              // --- Descripcion ---
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
                   icon: Icon(Icons.description_outlined),
-                  labelText: 'Descripción',
+                  labelText: 'Descripcion',
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Introduzca una descripción';
-                  if (value.length < 5) return 'Mínimo 5 caracteres';
+                  if (value == null || value.isEmpty) return 'Introduzca una descripcion';
+                  if (value.length < 5) return 'Minimo 5 caracteres';
                   return null;
                 },
               ),
               const SizedBox(height: 10),
+              
+              // --- Precio ---
               TextFormField(
                 controller: _priceController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -96,11 +98,13 @@ class _ProductEditState extends State<ProductEdit> {
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) return 'Introduzca un precio';
-                  if (double.tryParse(value) == null) return 'Valor numérico requerido';
+                  if (double.tryParse(value) == null) return 'Valor numerico requerido';
                   return null;
                 },
               ),
               const SizedBox(height: 10),
+              
+              // --- Fecha ---
               TextFormField(
                 controller: _availableController,
                 readOnly: true,
@@ -123,12 +127,14 @@ class _ProductEditState extends State<ProductEdit> {
                 },
               ),
               const SizedBox(height: 10),
+              
+              // --- Imagen ---
               TextFormField(
                 controller: _imageUrlController,
                 keyboardType: TextInputType.url,
                 decoration: InputDecoration(
                   icon: const Icon(Icons.image_outlined),
-                  labelText: 'Image URL',
+                  labelText: 'URL de Imagen',
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.folder_open),
                     onPressed: _pickImage,
@@ -136,6 +142,8 @@ class _ProductEditState extends State<ProductEdit> {
                 ),
               ),
               const SizedBox(height: 10),
+              
+              // --- Rating ---
               TextFormField(
                 controller: _ratingController,
                 keyboardType: TextInputType.number,
@@ -152,12 +160,14 @@ class _ProductEditState extends State<ProductEdit> {
                 },
               ),
               const SizedBox(height: 30),
+              
+              // --- Boton Guardar Cambios ---
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    // Creamos el objeto modificado manteniendo el mismo ID
+                    // Creamos un objeto nuevo pero manteniendo el ID original
                     final modifiedProduct = Product(
-                      id: product.id, // Mismo ID
+                      id: product.id, // Mismo ID para sobrescribir
                       description: _descriptionController.text,
                       price: double.parse(_priceController.text),
                       available: DateTime.parse(_availableController.text),
@@ -167,8 +177,8 @@ class _ProductEditState extends State<ProductEdit> {
                           : 0,
                     );
 
-                    // Guardamos cambios
-                    _productsService.modifyProduct(modifiedProduct);
+                    // Llamamos a modificar y esperamos (await)
+                    await _productsService.modifyProduct(modifiedProduct);
 
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Producto modificado')),

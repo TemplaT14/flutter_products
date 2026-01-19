@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_products/provider/products_service.dart';
-import 'package:flutter_products/models/products.dart';
 import 'package:flutter_products/pages/product_add.dart';
 import 'package:flutter_products/pages/product_detail.dart';
 
@@ -37,49 +36,52 @@ class Products extends StatefulWidget {
 class _ProductsState extends State<Products> {
   @override
   Widget build(BuildContext context) {
+    // ChangeNotifierProvider: Inyecta el servicio de datos en esta pantalla
     return ChangeNotifierProvider(
       create: (_) => ProductsService(),
       child: Consumer<ProductsService>(
+        // Consumer: Escucha cambios en el servicio para redibujar la lista
         builder: (context, productsService, child) {
           return Scaffold(
             appBar: AppBar(
               title: const Text('Productos'),
               actions: [
-                // Botón para añadir producto
+                // Boton + para ir a la pantalla de crear
                 IconButton(
                   icon: const Icon(Icons.add),
                   onPressed: () {
-                    // Navegamos a la pantalla de añadir
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const ProductAdd(),
                       ),
                     ).then((_) {
-                      // IMPORTANTE: Al volver, forzamos la actualización de la lista
+                      // Importante: Refresca la lista al volver de crear
                       setState(() {});
                     });
                   },
                 ),
               ],
             ),
+            // Constructor eficiente de la lista
             body: ListView.builder(
               itemCount: ProductsService.products.length,
               itemBuilder: (context, index) {
                 final product = ProductsService.products[index];
                 return ListTile(
-onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => ProductDetail(product: product),
-    ),
-  ).then((_) {
-    // Al volver (si hemos borrado algo), actualizamos la lista
-    setState(() {});
-  });
-},
-                  // Lógica para mostrar imagen de internet o archivo local
+                  // Al pulsar un elemento vamos al detalle
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductDetail(product: product),
+                      ),
+                    ).then((_) {
+                      // Refresca la lista al volver (por si borramos el producto)
+                      setState(() {});
+                    });
+                  },
+                  // Logica para mostrar imagen (Web vs Local vs Icono vacio)
                   leading: SizedBox(
                     width: 60,
                     height: 60,
@@ -101,6 +103,7 @@ onTap: () {
                   ),
                   title: Text(product.description),
                   subtitle: Text('${product.price} €'),
+                  // Genera las estrellas de valoracion (llenas vs vacias)
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

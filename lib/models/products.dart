@@ -1,5 +1,5 @@
 class Product {
-  // Constantes para las claves (Sección 6)
+  // Claves para el mapa JSON
   static const String idKey = 'id';
   static const String descriptionKey = 'description';
   static const String priceKey = 'price';
@@ -7,6 +7,7 @@ class Product {
   static const String imageUrlKey = 'imageUrl';
   static const String ratingKey = 'rating';
 
+  // Datos del producto
   final int id;
   final String description;
   final double price;
@@ -14,6 +15,7 @@ class Product {
   final String imageUrl;
   final int rating;
 
+  // Constructor principal
   Product({
     required this.id,
     required this.description,
@@ -23,12 +25,12 @@ class Product {
     required this.rating,
   });
 
-  // Constructor robusto con validaciones (Sección 5 y 6)
+  // Crea un producto desde un mapa JSON
   Product.fromJson(Map<String, dynamic> json)
       : id = int.tryParse(json[idKey].toString()) ?? 0,
         description = json[descriptionKey] != null
             ? json[descriptionKey].toString()
-            : 'Sin descripción',
+            : '',
         price = double.tryParse(json[priceKey].toString()) ?? 0.0,
         available = json[availableKey] != null
             ? DateTime.parse(json[availableKey].toString())
@@ -38,7 +40,7 @@ class Product {
             : '',
         rating = int.tryParse(json[ratingKey].toString()) ?? 0;
 
-  // Conversión a JSON usando las constantes
+  // Convierte el producto a formato JSON
   Map<String, dynamic> toJson() {
     return {
       idKey: id,
