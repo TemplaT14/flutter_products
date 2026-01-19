@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "description": "WD BLACK SN770 2TB NVMe SSD",
+    "price": 115,
+    "available": "2023-10-03",
+    "imageUrl": "https://placehold.co/200x100.png",
+    "rating": 5
+  },
+  {
+    "id": 2,
+    "description": "MSI MPG B550 GAMING PLUS",
+    "price": 139.9,
+    "available": "2023-09-15",
+    "imageUrl": "https://placehold.co/200x100.png",
+    "rating": 4
+  },
+  {
+    "id": 3,
+    "description": "Kingston FURY Beast DDR4 3200 MHz 16GB 2x8GB CL16",
+    "price": 45.95,
+    "available": "2023-01-03",
+    "imageUrl": "https://placehold.co/200x100.png",
+    "rating": 3
+  }
+]
