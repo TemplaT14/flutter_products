@@ -8,54 +8,42 @@ class ProductsService extends ChangeNotifier {
   static List<Product> products = [];
 
   ProductsService() {
-    print("--- Servicio Iniciado ---");
-    if (products.isNotEmpty) {
-      print("Ya hay productos en memoria. No recargamos.");
-      return;
-    }
+    // Si ya tenemos datos, no recargamos
+    if (products.isNotEmpty) return;
 
     loadProducts().then((value) {
       products = value;
-      print("Productos cargados iniciales: ${products.length}");
       notifyListeners();
 
       if (products.isEmpty) {
-        print("Lista vacía. Cargando JSON por defecto...");
         readJsonFile().then((value) {
           products = value;
-          saveProducts(products); // Guardamos los defaults
+          saveProducts(products);
           notifyListeners();
         });
       }
-    }).catchError((error) {
-      print("Error cargando productos: $error");
     });
   }
 
-  // --- CRUD con Logs y Await ---
+  // --- CRUD ---
 
   Future<void> addProduct(Product product) async {
-    print("Añadiendo producto: ${product.description}");
     products.add(product);
     await saveProducts(products);
     notifyListeners();
   }
 
   Future<void> removeProduct(Product product) async {
-    print("Borrando producto: ${product.description}");
     products.removeWhere((element) => element.id == product.id);
     await saveProducts(products);
     notifyListeners();
   }
 
   Future<void> modifyProduct(Product product) async {
-    print("Modificando producto: ${product.description}");
     int index = products.indexWhere((element) => element.id == product.id);
-    if (index != -1) {
-      products[index] = product;
-      await saveProducts(products);
-      notifyListeners();
-    }
+    products[index] = product;
+    await saveProducts(products);
+    notifyListeners();
   }
 
   Product getProduct(int id) {
@@ -74,41 +62,27 @@ class ProductsService extends ChangeNotifier {
       }
       return list;
     } catch (e) {
-      print("Error leyendo assets: $e");
       return [];
     }
   }
 
   Future<void> saveProducts(List<Product> products) async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String data = jsonEncode(products);
-      await prefs.setString('products', data);
-      print("--- DATOS GUARDADOS EN DISCO (${products.length} productos) ---");
-    } catch (e) {
-      print("ERROR AL GUARDAR: $e");
-    }
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('products', jsonEncode(products));
   }
 
   Future<List<Product>> loadProducts() async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? jsonString = prefs.getString('products');
-      
-      if (jsonString != null && jsonString.isNotEmpty) {
-        List jsonList = jsonDecode(jsonString);
-        List<Product> loadedProducts = [];
-        for (var item in jsonList) {
-          loadedProducts.add(Product.fromJson(item));
-        }
-        print("Recuperados ${loadedProducts.length} productos de SharedPreferences");
-        return loadedProducts;
-      } else {
-        print("No hay datos en SharedPreferences");
-        return [];
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? jsonString = prefs.getString('products');
+    
+    if (jsonString != null && jsonString.isNotEmpty) {
+      List jsonList = jsonDecode(jsonString);
+      List<Product> loadedProducts = [];
+      for (var item in jsonList) {
+        loadedProducts.add(Product.fromJson(item));
       }
-    } catch (e) {
-      print("Error al cargar de SharedPreferences: $e");
+      return loadedProducts;
+    } else {
       return [];
     }
   }
