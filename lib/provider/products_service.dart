@@ -5,97 +5,111 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/products.dart';
 
 class ProductsService extends ChangeNotifier {
-  // Lista estática de productos
   static List<Product> products = [];
 
   ProductsService() {
-    // Al iniciar, intentamos cargar los productos guardados
+    print("--- Servicio Iniciado ---");
+    if (products.isNotEmpty) {
+      print("Ya hay productos en memoria. No recargamos.");
+      return;
+    }
+
     loadProducts().then((value) {
       products = value;
+      print("Productos cargados iniciales: ${products.length}");
       notifyListeners();
 
-      // Si no hay productos guardados (primera vez), cargamos el JSON por defecto
       if (products.isEmpty) {
+        print("Lista vacía. Cargando JSON por defecto...");
         readJsonFile().then((value) {
           products = value;
-          saveProducts(products); // Los guardamos en local para la próxima
+          saveProducts(products); // Guardamos los defaults
           notifyListeners();
         });
       }
+    }).catchError((error) {
+      print("Error cargando productos: $error");
     });
   }
 
-  // --- CRUD (Create, Read, Update, Delete) ---
+  // --- CRUD con Logs y Await ---
 
-  // Añade un nuevo producto
-  void addProduct(Product product) {
+  Future<void> addProduct(Product product) async {
+    print("Añadiendo producto: ${product.description}");
     products.add(product);
-    saveProducts(products);
+    await saveProducts(products);
     notifyListeners();
   }
 
-  // Elimina un producto
-  void removeProduct(Product product) {
+  Future<void> removeProduct(Product product) async {
+    print("Borrando producto: ${product.description}");
     products.removeWhere((element) => element.id == product.id);
-    saveProducts(products);
+    await saveProducts(products);
     notifyListeners();
   }
 
-  // Obtiene un producto por ID
+  Future<void> modifyProduct(Product product) async {
+    print("Modificando producto: ${product.description}");
+    int index = products.indexWhere((element) => element.id == product.id);
+    if (index != -1) {
+      products[index] = product;
+      await saveProducts(products);
+      notifyListeners();
+    }
+  }
+
   Product getProduct(int id) {
     return products.firstWhere((element) => element.id == id);
   }
 
-  // Modifica un producto existente
-  void modifyProduct(Product product) {
-    int index = products.indexWhere((element) => element.id == product.id);
-    products[index] = product;
-    saveProducts(products);
-    notifyListeners();
-  }
+  // --- PERSISTENCIA ---
 
-  // --- PERSISTENCIA DE DATOS ---
-
-  // Lee el archivo JSON original (assets)
   Future<List<Product>> readJsonFile() async {
-    String jsonString = await rootBundle.loadString('assets/products.json');
-    List jsonList = jsonDecode(jsonString);
-    List<Product> products = [];
-    for (var item in jsonList) {
-      Product product = Product.fromJson(item);
-      products.add(product);
-    }
-    return products;
-  }
-
-  // Guarda la lista en el almacenamiento local (SharedPreferences)
-  Future<void> saveProducts(List<Product> products) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('products', jsonEncode(products));
-  }
-
-  // Carga la lista del almacenamiento local
-  Future<List<Product>> loadProducts() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? jsonString = prefs.getString('products');
-    
-    if (jsonString != null && jsonString.isNotEmpty) {
+    try {
+      String jsonString = await rootBundle.loadString('assets/products.json');
       List jsonList = jsonDecode(jsonString);
-      List<Product> loadedProducts = [];
+      List<Product> list = [];
       for (var item in jsonList) {
-        loadedProducts.add(Product.fromJson(item));
+        list.add(Product.fromJson(item));
       }
-      return loadedProducts;
-    } else {
+      return list;
+    } catch (e) {
+      print("Error leyendo assets: $e");
       return [];
     }
   }
 
-  // Borra todo (opcional, útil para pruebas)
-  Future<void> clearProducts() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('products');
-    products = [];
-    notifyListeners();
+  Future<void> saveProducts(List<Product> products) async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String data = jsonEncode(products);
+      await prefs.setString('products', data);
+      print("--- DATOS GUARDADOS EN DISCO (${products.length} productos) ---");
+    } catch (e) {
+      print("ERROR AL GUARDAR: $e");
+    }
+  }
+
+  Future<List<Product>> loadProducts() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? jsonString = prefs.getString('products');
+      
+      if (jsonString != null && jsonString.isNotEmpty) {
+        List jsonList = jsonDecode(jsonString);
+        List<Product> loadedProducts = [];
+        for (var item in jsonList) {
+          loadedProducts.add(Product.fromJson(item));
+        }
+        print("Recuperados ${loadedProducts.length} productos de SharedPreferences");
+        return loadedProducts;
+      } else {
+        print("No hay datos en SharedPreferences");
+        return [];
+      }
+    } catch (e) {
+      print("Error al cargar de SharedPreferences: $e");
+      return [];
+    }
   }
 }
